@@ -36,12 +36,8 @@ const updateSpecialtiesService = async (id,data ={}) => {
   return await specialty.save();
 };
 
-const deleteByAreaService = async (id) => {
-  return Speciality.findByIdAndDelete(id);
-};
-
 const deleteByAreaService = async (area) => {
-  return Speciality.deleteMany(area);
+  return Speciality.deleteMany({ area });
 };
 
 

@@ -1,0 +1,714 @@
+{
+  "info": {
+    "_postman_id": "ff127a93-1c75-42ec-b1f6-8422c14150a9",
+    "name": "Tarea U2 - Taller Mecánico - Silva",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3005"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "servicioId",
+      "value": ""
+    },
+    {
+      "key": "ordenId",
+      "value": ""
+    },
+    {
+      "key": "bitacoraId",
+      "value": ""
+    },
+    {
+      "key": "codigoPrueba",
+      "value": ""
+    },
+    {
+      "key": "nombrePrueba",
+      "value": ""
+    },
+    {
+      "key": "tokenOtro",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "01 · POST /auth/register (201/400)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/auth/register",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"name\": \"Usuario Postman Taller\", \"email\": \"taller.postman.u2@example.com\", \"password\": \"Taller2026!\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "// Datos distintos en cada corrida; ninguna colisión de código entre pruebas.",
+              "const letras = \"ABCDEFGHIJKLMNOPQRSTUVWXYZ\";",
+              "let codigo = \"\";",
+              "for (let i=0;i<3;i++) codigo += letras[Math.floor(Math.random()*letras.length)];",
+              "codigo += \"-\" + String(Math.floor(Math.random()*100)).padStart(2,\"0\");",
+              "pm.collectionVariables.set(\"codigoPrueba\", codigo);",
+              "pm.collectionVariables.set(\"nombrePrueba\", \"Revision de taller \" + Date.now());",
+              "pm.collectionVariables.unset(\"token\");",
+              "pm.collectionVariables.unset(\"servicioId\");",
+              "pm.collectionVariables.unset(\"ordenId\");",
+              "pm.collectionVariables.unset(\"bitacoraId\");",
+              "pm.collectionVariables.unset(\"tokenOtro\");"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Registro inicial o usuario ya registrado\", () => pm.expect([201,400]).to.include(pm.response.code));",
+              "pm.test(\"El registro responde JSON\", () => pm.response.to.be.json);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 · POST /auth/login (200)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/auth/login",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"email\": \"taller.postman.u2@example.com\", \"password\": \"Taller2026!\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Login 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Devuelve token JWT\", () => pm.expect(pm.response.json().token).to.be.a(\"string\").and.not.empty);",
+              "if (pm.response.code===200 && pm.response.json().token) pm.collectionVariables.set(\"token\",pm.response.json().token);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 · POST /servicios (400)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/servicios",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"nombre\": \"X\", \"codigo\": \"CODIGO_INVALIDO\", \"categoria\": \"otro\", \"tiempoEstimadoMin\": 22, \"repuestos\": []}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+              "pm.test(\"Devuelve errores de validación\", () => pm.expect(pm.response.json().errors).to.be.an(\"array\").that.is.not.empty);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 · POST /servicios (201)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/servicios",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"nombre\": \"{{nombrePrueba}}\", \"codigo\": \"{{codigoPrueba}}\", \"categoria\": \"mantenimiento\", \"tiempoEstimadoMin\": 45, \"repuestos\": [\"Aceite\", \"Filtro\"]}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+              "const d=pm.response.json();",
+              "pm.test(\"Generó ObjectId\", () => pm.expect(d._id).to.match(/^[a-f0-9]{24}$/i));",
+              "pm.test(\"Repuestos embebidos\", () => pm.expect(d.repuestos).to.include(\"Aceite\"));",
+              "pm.test(\"Slug automático\", () => pm.expect(d.slug).to.be.a(\"string\").and.not.empty);",
+              "pm.collectionVariables.set(\"servicioId\",d._id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 · GET /servicios (filtros)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/servicios?q=Revision&fields=nombre,codigo&sort=-nombre"
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "const x=pm.response.json();",
+              "const actual=x.find(s=>s._id===pm.collectionVariables.get(\"servicioId\"));",
+              "pm.test(\"Búsqueda encuentra el servicio\", () => pm.expect(actual).to.exist);",
+              "pm.test(\"Proyección incluye código\", () => pm.expect(actual.codigo).to.eql(pm.collectionVariables.get(\"codigoPrueba\")));",
+              "pm.test(\"Proyección excluye categoría\", () => pm.expect(actual).not.to.have.property(\"categoria\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 · PUT /servicios/:id (200)",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/servicios/{{servicioId}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"nombre\": \"Cambio de aceite verificado\", \"tiempoEstimadoMin\": 60}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "const d=pm.response.json();",
+              "pm.test(\"Nombre actualizado\", () => pm.expect(d.nombre).to.eql(\"Cambio de aceite verificado\"));",
+              "pm.test(\"Slug recalculado por pre validate\", () => pm.expect(d.slug).to.eql(\"cambio-de-aceite-verificado\"));",
+              "pm.test(\"Duración actualizada\", () => pm.expect(d.tiempoEstimadoMin).to.eql(60));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 · POST /ordenes-servicio (404)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/ordenes-servicio",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"vehiculoPlaca\": \"PBA-9876\", \"servicioId\": \"000000000000000000000001\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
+              "pm.test(\"Indica servicio inexistente\", () => pm.expect(pm.response.json().error).to.include(\"no existe\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "08 · POST /ordenes-servicio (201)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/ordenes-servicio",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"vehiculoPlaca\": \"PBA-9876\", \"servicioId\": \"{{servicioId}}\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+              "const d=pm.response.json();",
+              "pm.test(\"ID numérico PG\", () => pm.expect(d.id).to.be.a(\"number\"));",
+              "pm.test(\"Referencia Mongo como String\", () => pm.expect(d.servicioId).to.eql(pm.collectionVariables.get(\"servicioId\")));",
+              "pm.test(\"Estado pendiente\", () => pm.expect(d.estado).to.eql(\"pendiente\"));",
+              "pm.collectionVariables.set(\"ordenId\",d.id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "09 · GET /ordenes-servicio (200)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/ordenes-servicio"
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "const x=pm.response.json();",
+              "const orden=x.find(o=>o.id===Number(pm.collectionVariables.get(\"ordenId\")));",
+              "pm.test(\"Encuentra orden creada\", () => pm.expect(orden).to.exist);",
+              "pm.test(\"Unió servicio desde MongoDB\", () => pm.expect(orden.servicio._id).to.eql(pm.collectionVariables.get(\"servicioId\")));",
+              "pm.test(\"No hace falta N+1 para listado\", () => pm.expect(orden.servicio.nombre).to.eql(\"Cambio de aceite verificado\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "10 · POST /bitacoras (201)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/bitacoras",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"ordenServicioId\": \"{{ordenId}}\", \"numeroEntrada\": 1, \"detalle\": \"Se revisaron los filtros y se realizó mantenimiento preventivo.\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+              "const d=pm.response.json();",
+              "pm.test(\"Guarda ObjectId\", () => pm.expect(d._id).to.match(/^[a-f0-9]{24}$/i));",
+              "pm.test(\"Copia la placa de PostgreSQL\", () => pm.expect(d.vehiculoPlaca).to.eql(\"PBA-9876\"));",
+              "pm.test(\"Referencia a orden numérica\", () => pm.expect(d.ordenServicioId).to.eql(Number(pm.collectionVariables.get(\"ordenId\"))));",
+              "pm.collectionVariables.set(\"bitacoraId\",d._id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "11 · POST /bitacoras (409)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/bitacoras",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"ordenServicioId\": \"{{ordenId}}\", \"numeroEntrada\": 1, \"detalle\": \"Intento de duplicar el número de entrada existente.\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 409\", () => pm.response.to.have.status(409));",
+              "pm.test(\"Duplicado controlado\", () => pm.expect(pm.response.json().error).to.include(\"existe\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "12 · GET /bitacoras (populate)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/bitacoras"
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "const x=pm.response.json();",
+              "const b=x.find(i=>i._id===pm.collectionVariables.get(\"bitacoraId\"));",
+              "pm.test(\"Existe entrada creada\", () => pm.expect(b).to.exist);",
+              "pm.test(\"Populate del servicio\", () => pm.expect(b.servicio.nombre).to.eql(\"Cambio de aceite verificado\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "13 · GET /bitacoras/resumen (aggregate)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/bitacoras/resumen"
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "const x=pm.response.json();",
+              "const r=x.find(i=>i._id===Number(pm.collectionVariables.get(\"ordenId\")));",
+              "pm.test(\"Incluye la orden\", () => pm.expect(r).to.exist);",
+              "pm.test(\"Conteo calculado\", () => pm.expect(r.totalEntradas).to.eql(1));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "14 · DELETE /servicios/:id (409)",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": "{{baseUrl}}/api/servicios/{{servicioId}}"
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 409\", () => pm.response.to.have.status(409));",
+              "pm.test(\"No elimina servicio referenciado\", () => pm.expect(pm.response.json().error).to.include(\"órdenes\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "15 · POST /auth/register (otro usuario)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/auth/register",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"name\": \"Segundo Tecnico Postman\", \"email\": \"taller.postman.otro.u2@example.com\", \"password\": \"Taller2026!\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Segundo usuario nuevo o ya existente\", () => pm.expect([201,400]).to.include(pm.response.code));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "16 · POST /auth/login (otro usuario)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/auth/login",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"email\": \"taller.postman.otro.u2@example.com\", \"password\": \"Taller2026!\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Login segundo técnico 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Segundo JWT recibido\", () => pm.expect(pm.response.json().token).to.be.a(\"string\").and.not.empty);",
+              "if (pm.response.code===200 && pm.response.json().token) pm.collectionVariables.set(\"tokenOtro\",pm.response.json().token);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "17 · POST /bitacoras (403)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/bitacoras",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"ordenServicioId\": \"{{ordenId}}\", \"numeroEntrada\": 2, \"detalle\": \"Intento de otro usuario de registrar un avance ajeno.\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{tokenOtro}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 403 por orden de otro usuario\", () => pm.response.to.have.status(403));",
+              "pm.test(\"No autoriza bitácora ajena\", () => pm.expect(pm.response.json().error).to.include(\"permiso\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "18 · DELETE /ordenes-servicio/:id (200)",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": "{{baseUrl}}/api/ordenes-servicio/{{ordenId}}"
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Eliminó la orden de PostgreSQL\", () => pm.expect(pm.response.json().id).to.eql(Number(pm.collectionVariables.get(\"ordenId\"))));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "19 · GET /bitacoras (cascada)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/bitacoras"
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "const x=pm.response.json();",
+              "pm.test(\"No quedó bitácora huérfana\", () => pm.expect(x.some(b=>b._id===pm.collectionVariables.get(\"bitacoraId\"))).to.eql(false));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "20 · DELETE /servicios/:id (200)",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": "{{baseUrl}}/api/servicios/{{servicioId}}"
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Servicio eliminado\", () => pm.expect(pm.response.json()._id).to.eql(pm.collectionVariables.get(\"servicioId\")));"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
